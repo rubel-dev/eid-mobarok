@@ -1,0 +1,655 @@
+<!-- get help from https://codepen.io/JeffreyTaylor/pen/jzohC -->
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>EID MOBARAK ALL</title>
+        <script src="https://code.jquery.com/jquery-3.1.1.js"></script>
+        <script src="/bower_components/jquery.countdown/dist/jquery.countdown.js"></script> 
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+       <script type="text/javascript">
+      
+// <![CDATA[
+var bits=80; // how many bits
+var speed=33; // how fast - smaller is faster
+var bangs=5; // how many can be launched simultaneously (note that using too many can slow the script down)
+var colours=new Array("#03f", "#f03", "#0e0", "#93f", "#0cf", "#f93", "#f0c"); 
+//                     blue    red     green   purple  cyan    orange  pink
+
+
+var bangheight=new Array();
+var intensity=new Array();
+var colour=new Array();
+var Xpos=new Array();
+var Ypos=new Array();
+var dX=new Array();
+var dY=new Array();
+var stars=new Array();
+var decay=new Array();
+var swide=800;
+var shigh=600;
+var boddie;
+
+if (typeof('addRVLoadEvent')!='function') function addRVLoadEvent(funky) {
+  var oldonload=window.onload;
+  if (typeof(oldonload)!='function') window.onload=funky;
+  else window.onload=function() {
+    if (oldonload) oldonload();
+    funky();
+  }
+}
+
+addRVLoadEvent(light_blue_touchpaper);
+
+function light_blue_touchpaper() { if (document.getElementById) {
+  var i;
+  boddie=document.createElement("div");
+  boddie.style.position="fixed";
+  boddie.style.top="0px";
+  boddie.style.left="0px";
+  boddie.style.overflow="visible";
+  boddie.style.width="1px";
+  boddie.style.height="1px";
+  boddie.style.backgroundColor="transparent";
+  document.body.appendChild(boddie);
+  set_width();
+  for (i=0; i<bangs; i++) {
+    write_fire(i);
+    launch(i);
+    setInterval('stepthrough('+i+')', speed);
+  }
+}}
+
+function write_fire(N) {
+  var i, rlef, rdow;
+  stars[N+'r']=createDiv('|', 12);
+  boddie.appendChild(stars[N+'r']);
+  for (i=bits*N; i<bits+bits*N; i++) {
+    stars[i]=createDiv('*', 13);
+    boddie.appendChild(stars[i]);
+  }
+}
+
+function createDiv(char, size) {
+  var div=document.createElement("div");
+  div.style.font=size+"px monospace";
+  div.style.position="absolute";
+  div.style.backgroundColor="transparent";
+  div.appendChild(document.createTextNode(char));
+  return (div);
+}
+
+function launch(N) {
+  colour[N]=Math.floor(Math.random()*colours.length);
+  Xpos[N+"r"]=swide*0.5;
+  Ypos[N+"r"]=shigh-5;
+  bangheight[N]=Math.round((0.5+Math.random())*shigh*0.4);
+  dX[N+"r"]=(Math.random()-0.5)*swide/bangheight[N];
+  if (dX[N+"r"]>1.25) stars[N+"r"].firstChild.nodeValue="/";
+  else if (dX[N+"r"]<-1.25) stars[N+"r"].firstChild.nodeValue="\\";
+  else stars[N+"r"].firstChild.nodeValue="|";
+  stars[N+"r"].style.color=colours[colour[N]];
+}
+
+function bang(N) {
+  var i, Z, A=0;
+  for (i=bits*N; i<bits+bits*N; i++) { 
+    Z=stars[i].style;
+    Z.left=Xpos[i]+"px";
+    Z.top=Ypos[i]+"px";
+    if (decay[i]) decay[i]--;
+    else A++;
+    if (decay[i]==15) Z.fontSize="7px";
+    else if (decay[i]==7) Z.fontSize="2px";
+    else if (decay[i]==1) Z.visibility="hidden";
+    if (decay[i]>1 && Math.random()<.1) {
+       Z.visibility="hidden";
+       setTimeout('stars['+i+'].style.visibility="visible"', speed-1);
+    }
+    Xpos[i]+=dX[i];
+    Ypos[i]+=(dY[i]+=1.25/intensity[N]);
+
+  }
+  if (A!=bits) setTimeout("bang("+N+")", speed);
+}
+
+function stepthrough(N) { 
+  var i, M, Z;
+  var oldx=Xpos[N+"r"];
+  var oldy=Ypos[N+"r"];
+  Xpos[N+"r"]+=dX[N+"r"];
+  Ypos[N+"r"]-=4;
+  if (Ypos[N+"r"]<bangheight[N]) {
+    M=Math.floor(Math.random()*3*colours.length);
+    intensity[N]=5+Math.random()*4;
+    for (i=N*bits; i<bits+bits*N; i++) {
+      Xpos[i]=Xpos[N+"r"];
+      Ypos[i]=Ypos[N+"r"];
+      dY[i]=(Math.random()-0.5)*intensity[N];
+      dX[i]=(Math.random()-0.5)*(intensity[N]-Math.abs(dY[i]))*1.25;
+      decay[i]=16+Math.floor(Math.random()*16);
+      Z=stars[i];
+      if (M<colours.length) Z.style.color=colours[i%2?colour[N]:M];
+      else if (M<2*colours.length) Z.style.color=colours[colour[N]];
+      else Z.style.color=colours[i%colours.length];
+      Z.style.fontSize="13px";
+      Z.style.visibility="visible";
+    }
+    bang(N);
+    launch(N);
+  }
+  stars[N+"r"].style.left=oldx+"px";
+  stars[N+"r"].style.top=oldy+"px";
+} 
+
+window.onresize=set_width;
+function set_width() {
+  var sw_min=999999;
+  var sh_min=999999;
+  if (document.documentElement && document.documentElement.clientWidth) {
+    if (document.documentElement.clientWidth>0) sw_min=document.documentElement.clientWidth;
+    if (document.documentElement.clientHeight>0) sh_min=document.documentElement.clientHeight;
+  }
+  if (typeof(self.innerWidth)!="undefined" && self.innerWidth) {
+    if (self.innerWidth>0 && self.innerWidth<sw_min) sw_min=self.innerWidth;
+    if (self.innerHeight>0 && self.innerHeight<sh_min) sh_min=self.innerHeight;
+  }
+  if (document.body.clientWidth) {
+    if (document.body.clientWidth>0 && document.body.clientWidth<sw_min) sw_min=document.body.clientWidth;
+    if (document.body.clientHeight>0 && document.body.clientHeight<sh_min) sh_min=document.body.clientHeight;
+  }
+  if (sw_min==999999 || sh_min==999999) {
+    sw_min=800;
+    sh_min=600;
+  }
+  swide=sw_min;
+  shigh=sh_min;
+}
+// ]]>
+</script>
+<style>
+    body { margin:20px; background:hsl(70, 31%, 85%); text-align:center; }
+
+.balloon {
+  display:inline-block;
+   width:120px;
+  height:145px;
+  background:hsl(215,50%,65%);
+  border-radius:80%;
+  position:relative;
+  box-shadow:inset -10px -10px 0 rgba(0,0,0,0.07);
+  margin:20px 30px;
+  transition:transform 0.5s ease;
+  z-index:10;
+  animation:balloons 4s ease-in-out infinite;
+  transform-origin:bottom center;
+  font-size: 100px;
+}
+
+@keyframes balloons {
+  0%,100%{ transform:translateY(0) rotate(-4deg); }
+  50%{ transform:translateY(-25px) rotate(4deg); }
+}
+
+
+.balloon:before {
+  content:"▲";
+  font-size:20px;
+  color:hsl(215,30%,50%);
+  display:block;
+  text-align:center;
+  width:100%;
+  position:absolute;
+  bottom:-12px;
+  z-index:-100;
+}
+
+.balloon:after {
+ display:inline-block; top:153px;
+  position:absolute;
+  height:250px;
+  width:1px;
+  margin:0 auto;
+  content:"";
+  background:rgba(0,0,0,0.2); 
+}
+
+.balloon:nth-child(2){ background:hsl(245,40%,65%); animation-duration:3.5s; }
+.balloon:nth-child(2):before { color:hsl(245,40%,65%);  }
+
+.balloon:nth-child(3){ background:hsl(139,50%,60%); animation-duration:3s; }
+.balloon:nth-child(3):before { color:hsl(139,30%,50%);  }
+
+.balloon:nth-child(4){ background:hsl(59,50%,58%); animation-duration:4.5s; }
+    .balloon:nth-child(4):before { color:hsl(59,30%,52%);  }
+
+.balloon:nth-child(5){ background:hsl(23,55%,57%); animation-duration:5s; }
+.balloon:nth-child(5):before { color:hsl(23,44%,46%);  }
+
+.balloon:nth-child(6){ background:hsl(70,60%,63%); animation-duration:5.5s; }
+.balloon:nth-child(6):before { color:hsl(70,38%,50%);  }
+
+.balloon:nth-child(6){ background:hsl(180,85%,57%); animation-duration:6s; }
+.balloon:nth-child(6):before { color:hsl(180,94%,46%);  }
+
+.balloon:nth-child(7){ background:hsl(3,90%,37%); animation-duration:6.5s; }
+.balloon:nth-child(7):before { color:hsl(3,44%,46%);  }
+
+.balloon:nth-child(8){ background:hsl(38,55%,97%); animation-duration:7s; }
+.balloon:nth-child(8):before { color:hsl(38,44%,183%);  }
+
+.balloon:nth-child(9){ background:hsl(200,18%,57%); animation-duration:7.5s; }
+.balloon:nth-child(9):before { color:hsl(200,29%,46%);  }
+
+.balloon:nth-child(10){ background:hsl(170,13%,57%); animation-duration:8s; }
+.balloon:nth-child(10):before { color:hsl(170,13%,46%);  }
+
+
+.balloon:nth-child(11){ background:hsl(203,48%,57%); animation-duration:8.5s; }
+.balloon:nth-child(11):before { color:hsl(203,78%,46%);  }
+h1{
+    font-size:55px;
+    font-family:cursive;
+    color:black;
+    text-shadow:4px 3px 6px violet;
+    text-align:center ;
+    float:center ;
+    position:center;  
+    font-weight:bolder;  
+}
+h3{
+    font-size:55px;
+    color:white;
+}
+h2{
+    font-size:50px;
+    font-family:cursive;
+    color:black;
+    text-shadow:4px 3px 6px violet;
+    text-align:center ;
+    float:center ;
+}
+marquee {
+    font-size:30px;
+    font-weight:bolder;
+    font-family:serif;
+    color:red;
+}
+#txt{
+    font-size:9px;
+    font-family:sans-serif;
+    text-transform: uppercase;
+}
+#container{
+    border:1px solid transparent ;
+    height:100px;
+    position:absolute ;
+       top:1000px;
+       left:360px;
+}
+
+p{
+    width:10px;
+    height:10px;
+    border:1px solid black;
+    border-radius:3px;
+    position:absolute ;
+    background: #124555 ;
+}
+
+ 
+    .main{
+      width: 700px;
+      margin: 50px auto;
+    }
+    #getting-started{
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      
+    }
+    .single-counter{
+      width:100px;
+      height: 100px;
+       
+      background:pink;
+      color: blue;
+      padding: 20px;
+      font-size: 30px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    span{
+      display:block;
+      margin-top: 10px;
+    }
+</style>
+
+    </head>
+        <body>
+
+
+            <div class="main">
+                <h4 style="color:blue;font-size:25px" class="title">Eid is Coming After !!!!</h4>
+                 
+                <div id="getting-started"></div> 
+
+
+<div class="balloon">E</div>
+<div class="balloon">I</div>
+<div class="balloon">D</div>
+<br/>
+<div class="balloon">M</div>
+<div class="balloon">U</div>
+<div class="balloon">B</div>
+<div class="balloon">A</div>
+<div class="balloon">R</div>
+<div class="balloon">A</div>
+<div class="balloon">K</div>
+
+<div>
+    <h3>...................<br>
+        ....................<br>
+        ..........</h3>
+            <h1>EID MUBHARAK </h1>
+            <h2>💞 <span id='text'></span> 💞</h2> 
+            <div id="container"></div>
+            <marquee> ⚠️Dont go anywhere! Eid is coming <b>BUT THE CORONA IS STILL THERE . SO STAY HOME STAY SAFE⚠️ </b> 😍H😍A😍P😍P😍Y😍😍😍E😍I😍D😍</marquee>
+</div>
+
+<script src="countdown.min.js"></script>
+<script type="text/javascript">
+$('#getting-started').countdown('2021/07/21', function(event) {
+       $(this).html(event.strftime('%w weeks %d days %H:%M:%S'));
+
+       $(this).html(event.strftime('<div class ="single-counter">%D <span>Days</span></div><div class ="single-counter">%H <span>Hours</span></div><div class ="single-counter">%M <span>Minutes</span></div><div class ="single-counter">%S <span>Seconds</span></div>'));
+ });
+</script>
+
+    <script>
+        
+       
+              
+var A = [ [0,1,1,0],
+          [1,0,0,1],
+          [1,1,1,1],
+          [1,0,0,1],
+          [1,0,0,1]
+         ];
+var B = [ [1,1,1,1],
+          [1,0,0,1],
+          [1,1,1,0],
+          [1,0,0,1],
+          [1,1,1,1]
+        ];
+var C = [ [0,1,1,1],
+          [1,0,0,0],
+          [1,0,0,0],
+          [1,0,0,0],
+          [0,1,1,1]
+        ];
+var D = [ [1,1,1,0],
+          [1,0,0,1],
+          [1,0,0,1],
+          [1,0,0,1],
+          [1,1,1,0]
+        ];
+var E = [ [1,1,1,1],
+          [1,0,0,0],
+          [1,1,1,0],
+          [1,0,0,0],
+          [1,1,1,1]
+        ];
+var F = [ [1,1,1,1],
+          [1,0,0,0],
+          [1,1,1,0],
+          [1,0,0,0],
+          [1,0,0,0]
+        ];
+var G = [ [1,1,1,1],
+          [1,0,0,0],
+          [1,0,1,1],
+          [1,0,0,1],
+          [1,1,1,1]
+        ];
+var H = [ [1,0,0,1],
+          [1,0,0,1],
+          [1,1,1,1],
+          [1,0,0,1],
+          [1,0,0,1]
+        ];
+var I = [ [1,1,1],
+          [0,1,0],
+          [0,1,0],
+          [0,1,0],
+          [1,1,1]
+        ];
+var J = [ [0,0,0,1],
+          [0,0,0,1],
+          [0,0,0,1],
+          [1,0,0,1],
+          [1,1,1,1]
+        ];
+var K = [ [1,0,0,1],
+          [1,0,1,0],
+          [1,1,0,0],
+          [1,0,1,0],
+          [1,0,0,1]
+        ];
+var L = [ [1,0,0],
+          [1,0,0],
+          [1,0,0],
+          [1,0,0],
+          [1,1,1]
+        ];
+var M = [ [1,1,1,1,0],
+          [1,0,1,0,1],
+          [1,0,1,0,1],
+          [1,0,1,0,1],
+          [1,0,1,0,1]
+        ];
+var N = [ [1,0,0,0,1],
+          [1,1,0,0,1],
+          [1,0,1,0,1],
+          [1,0,0,1,1],
+          [1,0,0,0,1]
+        ];
+var O = [ [0,1,1,0],
+          [1,0,0,1],
+          [1,0,0,1],
+          [1,0,0,1],
+          [0,1,1,0]
+        ];
+var P = [ [1,1,1,0],
+          [1,0,0,1],
+          [1,0,0,1],
+          [1,1,1,0],
+          [1,0,0,0]
+        ];
+// letter Q is reaallly annoying!!
+var Q = [ [0,1,1,0,0],
+          [1,0,0,1,0],
+          [1,0,0,1,0],
+          [1,0,1,1,0],
+          [0,1,1,1,1]
+        ];
+var R = [ [1,1,1,1],
+          [1,0,0,1],
+          [1,0,0,1],
+          [1,1,1,0],
+          [1,0,0,1]
+        ];
+var S = [ [0,1,1],
+          [1,0,0],
+          [1,1,1],
+          [0,0,1],
+          [1,1,0]
+        ];
+var T = [ [1,1,1],
+          [0,1,0],
+          [0,1,0],
+          [0,1,0],
+          [0,1,0]
+        ];
+var U = [ [1,0,0,1],
+          [1,0,0,1],
+          [1,0,0,1],
+          [1,0,0,1],
+          [0,1,1,0]
+        ];
+var V = [ [1,0,0,0,1],
+          [1,0,0,0,1],
+          [1,0,0,0,1],
+          [0,1,0,1,0],
+          [0,0,1,0,0]
+        ];
+var W = [ [1,0,1,0,1],
+          [1,0,1,0,1],
+          [1,0,1,0,1],
+          [1,0,1,0,1],
+          [0,1,1,1,0]
+        ];
+var X = [ [1,0,0,0,1],
+          [0,1,0,1,0],
+          [0,0,1,0,0],
+          [0,1,0,1,0],
+          [1,0,0,0,1]
+        ];
+var Y = [ [1,0,0,0,1],
+          [0,1,0,1,0],
+          [0,0,1,0,0],
+          [0,0,1,0,0],
+          [0,0,1,0,0]
+        ];
+var Z = [ [1,1,1,1],
+          [0,0,0,1],
+          [0,1,1,0],
+          [1,0,0,0],
+          [1,1,1,1]
+        ];
+            
+//extra
+
+// Created by Code_Freak😊
+
+// Created by Jonathan Pizarra
+
+// Created by Jonathan Pizarra
+
+$(document).ready(function(){
+//  input string
+//var str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+var str = prompt("Enter your name ") ;
+document.getElementById('text').innerText = str
+str = str.toUpperCase() ;
+
+//vars
+var cont, sp, curr, offx, arr, count, c2, x, y;
+
+main();
+function main(){
+
+//   variable 
+cont = $("#container");
+sp = [[0,0,0,0]];
+curr;
+offx = 20;
+arr = [];
+count = 0;
+cont.html("");
+c2 = 0;
+// main loop
+for(var j0=0; j0<str.length; j0++){
+  if(str[j0].match(/[^A-Z]/)){
+      // if it's not a letter
+      curr = sp;
+  }
+  else{
+      // just evals the current letter to get the variable instead of using if statements or switch case
+      curr = eval(str[j0]);
+  }
+  // j1 loops vertically in the matrix
+for(var j1=0; j1<curr.length; j1++){
+   // j2 loops horizontally
+    for(var j2=0; j2<curr[j1].length; j2++){
+        // if it's 1, add a <p> tag to container div
+        if(curr[j1][j2] == 1){
+          x = j2*10;
+          y = j1*10;
+          // randomizes the starting point of squares
+          sw(count);
+          
+          cont.html( cont.html() + "<p style=' top:" + y + "px;left:" + x + "px;'></p>");
+          // push the right coordinates
+          arr.push({
+            y:j1*10,
+            x:j2*10+offx
+          });
+          // just a counter
+          count++;
+          count = count>3?0:count;
+        }        
+    }   // end of j2 loop
+} // end of j1 for loop
+
+offx += 10 + (curr[0].length * 10)
+
+} // end of main loop
+
+
+
+// the animation part
+for(var j3=0; j3<arr.length; j3++){
+    
+    $("p:eq(" + j3 + ")").animate({"top":arr[j3].y + "px","left":arr[j3].x + "px"},Math.round(Math.random()*3000+400),"swing",callbac);
+    
+}   // j3 loop
+
+
+//} //  end of main function''
+
+// I separated the switch case for clarity
+function sw(c){
+    switch(c){
+        case 0: // square comes from above
+        y += Math.round(Math.random()*-500)-100;
+        break;
+        case 1: //  from  right
+        x += offx + Math.round(Math.random()*500)+100;
+        break;
+        case 2: // from bottom
+        y += Math.round(Math.random()*500) +100;
+        break;
+        case 3: // from left
+        x += offx - Math.round(Math.random()*500)+100;
+        break;
+     }
+}
+
+} //  end of main function
+
+  // a callback counter function is needed so that the animation repeats only after all the animations are complete:
+function callbac(){
+    c2++;
+    //if all animations are done:
+    if(c2 >= arr.length){
+       setTimeout(function(){
+           main();
+           clrs();
+       },1000 )
+    }
+}
+
+// color changer func
+function clrs(){
+ var r = Math.floor(Math.random() * 255) ;
+ var g = Math.floor(Math.random() * 255) ;
+ var b = Math.floor(Math.random() * 255) ;
+ $("p").css("background","rgb(" + r + ","+ g + "," + b + ")");                 
+
+}
+    
+})
+//Cr
+    </script>
+    </body>
+</html>
